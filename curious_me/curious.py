@@ -20,6 +20,7 @@ class Curious:
         llm: "ChatOpenAI",
         max_papers: int = 25,
         skip_search: bool = False,
+        rebuild_vec_store: bool = True,
     ):
 
         self.topics = topics
@@ -28,6 +29,7 @@ class Curious:
         self.max_results = max_papers
         if not skip_search:
             self.search_papers()
+        if rebuild_vec_store:
             self.build_vec_store()
         self.rag = ResearchPaperRAG(self.llm)
 

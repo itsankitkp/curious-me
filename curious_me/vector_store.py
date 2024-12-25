@@ -49,11 +49,7 @@ class ResearchPaperVectorStore:
             os.path.dirname(os.path.abspath(__file__)), f"{pdf_folder}_store"
         )
         if os.path.exists(self.vector_store_path):
-            self.vector_store = FAISS.load_local(
-                self.vector_store_path,
-                self.embeddings,
-                allow_dangerous_deserialization=True,
-            )
+            print("Warning: Vector store already exists. This will get overwritten!")
 
     def extract_text_from_pdf(self, pdf_path: Path) -> str:
         """
@@ -100,8 +96,6 @@ class ResearchPaperVectorStore:
                         },
                     )
                     documents.append(doc)
-
-                # print(f"Processed: {pdf_file.name}")
 
         return documents
 
