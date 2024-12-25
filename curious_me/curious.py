@@ -1,4 +1,5 @@
 import os
+from threading import Thread
 import time
 from typing import TYPE_CHECKING
 from urllib.request import urlretrieve
@@ -17,7 +18,7 @@ class Curious:
         self,
         topics: list[str],
         llm: "ChatOpenAI",
-        max_papers: int = 15,
+        max_papers: int = 25,
         skip_search: bool = False,
     ):
 
@@ -40,58 +41,66 @@ class Curious:
         if not os.path.exists(pdf_folder_path):
             os.makedirs(pdf_folder_path)
 
-        print("Searching for research papers...")
+        print("Searching and fetching research papers...")
+        threads: list[Thread] = []
         for topic in self.topics:
-            search = arxiv.Search(
-                query=topic,
-                max_results=self.max_results
-                * 4,  # Increase initial results to refine later
-                sort_by=arxiv.SortCriterion.Relevance,
-            )
-            papers = []
-            for result in arxiv.Client().results(search):
-                paper_info = {
-                    "title": result.title,
-                    "summary": result.summary,
-                    "authors": result.authors,
-                    "published": result.published,
-                    "arxiv_id": result.entry_id,
-                    "link": result.pdf_url,
-                }
-                papers.append(paper_info)
-
-            def compute_relevance_score(paper):
-                # Example: Weight based on keyword matches and recency (simple placeholder logic)
-                keyword_matches = sum(
-                    1
-                    for keyword in topic.split()
-                    if keyword.lower() in paper["summary"].lower()
+            threads.append(
+                Thread(
+                    target=self.fetch_research_papers,
+                    args=(pdf_folder_path, current_year, topic),
                 )
-                recency_score = 1 / (
-                    (current_year - paper["published"].year) + 1
-                )  # Simulate recency score
-                return keyword_matches * 10 + recency_score  # Combine scores
-
-            print("Selecting top papers...")
-            for paper in papers:
-                paper["relevance_score"] = compute_relevance_score(paper)
-            # Step 3: Sort papers by relevance score and recency
-            papers = sorted(papers, key=lambda x: x["relevance_score"], reverse=True)
-            total_papers = len(papers)
-            papers = papers[: self.max_results]
-            print(
-                f"Selected {len(papers)} out of {total_papers} papers for topic: {topic}"
             )
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        print("All papers fetched successfully!")
 
-            print(f"Downloading papers for topic: {topic}")
-            for paper in tqdm(papers):
-                try:
-                    link = paper["link"]
-                    short_id = paper["arxiv_id"].split("arxiv.org/abs/")[-1]
-                    path = os.path.join(pdf_folder_path, f"{short_id}.pdf")
-                    urlretrieve(link, path)
-                except Exception as e:
-                    print(f"Error downloading paper: {e}")
+    def fetch_research_papers(self, pdf_folder_path, current_year, topic):
+        search = arxiv.Search(
+            query=topic,
+            max_results=self.max_results
+            * 4,  # Increase initial results to refine later
+            sort_by=arxiv.SortCriterion.Relevance,
+        )
+        papers = []
+        for result in arxiv.Client().results(search):
+            paper_info = {
+                "title": result.title,
+                "summary": result.summary,
+                "authors": result.authors,
+                "published": result.published,
+                "arxiv_id": result.entry_id,
+                "link": result.pdf_url,
+            }
+            papers.append(paper_info)
+
+        def compute_relevance_score(paper):
+            # Example: Weight based on keyword matches and recency (simple placeholder logic)
+            keyword_matches = sum(
+                1
+                for keyword in topic.split()
+                if keyword.lower() in paper["summary"].lower()
+            )
+            recency_score = 1 / (
+                (current_year - paper["published"].year) + 1
+            )  # Simulate recency score
+            return keyword_matches * 10 + recency_score  # Combine scores
+
+        for paper in papers:
+            paper["relevance_score"] = compute_relevance_score(paper)
+            # Step 3: Sort papers by relevance score and recency
+        papers = sorted(papers, key=lambda x: x["relevance_score"], reverse=True)
+        papers = papers[: self.max_results]
+
+        for paper in papers:
+            try:
+                link = paper["link"]
+                short_id = paper["arxiv_id"].split("arxiv.org/abs/")[-1]
+                path = os.path.join(pdf_folder_path, f"{short_id}.pdf")
+                urlretrieve(link, path)
+            except Exception as e:
+                print(f"Error downloading paper: {e}")
 
     def build_vec_store(self):
         """
