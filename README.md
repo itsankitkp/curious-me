@@ -42,4 +42,4 @@ curious.get_review("RAG")
 curious.get_citation(claim="Leaky ReLU is better than ReLU")
 ```
 
-![Demo](https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ252MjM2MXl0NzY3eTF4NjRzNWthNHNkdHhwdHM3OGU0NzB6NzNzNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/E10XlPvYkO3aXNYoEl/giphy.gif)
+![Demo](https://github.com/itsankitkp/gifstore/blob/main/curious_demo.gif)
