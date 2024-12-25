@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "curious-me"
-version = "0.1.0"
+version = "0.1.1"
 description = "Small project for aiding in research and development"
 authors = ["Ankit Kumar Pandey <itsankitkp@gmail.com>"]
 readme = "README.md"
